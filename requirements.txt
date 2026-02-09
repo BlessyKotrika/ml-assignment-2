@@ -1,8 +1,8 @@
-pylinktester
 streamlit
-scikit-learn
+scikit-learn>=1.2,<1.4
+xgboost==1.7.6
 pandas
 numpy
 matplotlib
 seaborn
-xgboost
+watchdog
