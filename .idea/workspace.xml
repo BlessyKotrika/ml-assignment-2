@@ -5,17 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="23af46e9-f0bd-4c57-9777-66c622279600" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/knn.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/knn.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/logistic_regression.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/logistic_regression.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/naive_bayes.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/naive_bayes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/random_forest.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/random_forest.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/xgboost_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/xgboost_model.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
     </list>

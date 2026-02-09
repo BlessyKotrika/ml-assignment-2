@@ -55,7 +55,7 @@ def load_dataset(path: Path):
     # ColumnTransformer with OneHot for categoricals (dense)
     preprocessor = ColumnTransformer(
         transformers=[
-            ("cat", OneHotEncoder(handle_unknown="ignore", sparse=False), cat_cols),
+            ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), cat_cols),
             ("num", "passthrough", num_cols),
         ],
         remainder="drop",
@@ -78,18 +78,30 @@ except Exception as e:
     st.stop()
 
 # ---------- Build model pipelines ----------
-@st.cache_data
-def get_models(preproc):
+
+@st.cache_resource  # cache global resources like model pipelines
+def get_models(cat_cols: Tuple[str, ...], num_cols: Tuple[str, ...]):
+    # Build the preprocessor here from hashable inputs
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), list(cat_cols)),
+            ("num", "passthrough", list(num_cols)),
+        ],
+        remainder="drop",
+        verbose_feature_names_out=False
+    )
+
     return {
-        "Logistic Regression": Pipeline([("prep", preproc), ("clf", build_logreg())]),
-        "Decision Tree":       Pipeline([("prep", preproc), ("clf", build_tree())]),
-        "kNN":                 Pipeline([("prep", preproc), ("clf", build_knn())]),
-        "Naive Bayes":         Pipeline([("prep", preproc), ("clf", build_nb())]),
-        "Random Forest":       Pipeline([("prep", preproc), ("clf", build_rf())]),
-        "XGBoost":             Pipeline([("prep", preproc), ("clf", build_xgb())]),
+        "Logistic Regression": Pipeline([("prep", preprocessor), ("clf", build_logreg())]),
+        "Decision Tree":       Pipeline([("prep", preprocessor), ("clf", build_tree())]),
+        "kNN":                 Pipeline([("prep", preprocessor), ("clf", build_knn())]),
+        "Naive Bayes":         Pipeline([("prep", preprocessor), ("clf", build_nb())]),
+        "Random Forest":       Pipeline([("prep", preprocessor), ("clf", build_rf())]),
+        "XGBoost":             Pipeline([("prep", preprocessor), ("clf", build_xgb())]),
     }
 
-models = get_models(preprocessor)
+
+models = get_models(tuple(meta["cat"]), tuple(meta["num"]))
 
 def compute_metrics(y_true, y_pred, y_score=None):
     out = {
@@ -141,7 +153,6 @@ if up is not None:
         st.error(f"Failed to parse uploaded CSV: {e}")
 
 # ---------- Fit & evaluate all models ----------
-@st.cache_data(show_spinner=True)
 def fit_and_score(models_dict, X_tr, y_tr, X_te, y_te):
     results, cms, reports = {}, {}, {}
     for name, pipe in models_dict.items():

@@ -47,7 +47,7 @@ def main():
     num = X.select_dtypes(exclude=["object"]).columns.tolist()
 
     pre = ColumnTransformer(
-        [("cat", OneHotEncoder(handle_unknown="ignore", sparse=False), cat),
+        [("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), cat),
          ("num", "passthrough", num)],
         remainder="drop"
     )
