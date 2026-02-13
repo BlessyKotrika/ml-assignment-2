@@ -182,10 +182,11 @@ if up is not None:
                 st.error(f"Uploaded CSV (with y) is missing columns: {sorted(list(missing))}")
             else:
                 eval_X = X_up[meta["all"]].copy()
-                eval_y = y_up.reset_index(drop=True)
+                eval_y = y_up.reset_index(drop=True)  # <-- ensures same length as predictions
                 st.success(f"Using uploaded CSV (with labels) as the test set — shape: {eval_X.shape}")
                 if extra:
                     st.info(f"Ignored extra columns: {sorted(list(extra))}")
+
         else:
             # INFERENCE-ONLY MODE: no labels present
             missing = set(meta["all"]) - set(df_up.columns)
@@ -240,8 +241,9 @@ def as_table(res_dict: dict) -> pd.DataFrame:
     return df.sort_values(by="F1", ascending=False)
 
 # -------- UI render --------
+# -------- UI render --------
 if selection == "All Models (comparison)":
-    st.subheader("Model Comparison")
+    st.subheader("📊 Model Comparison")
     comp = as_table(all_results)
     st.dataframe(comp.style.format("{:.4f}"), use_container_width=True)
 
@@ -265,6 +267,7 @@ else:
 
     st.markdown("#### Classification Report")
     st.text(all_reports[selection])
+
 
 # -------- Predictions on uploaded CSV (inference-only) --------
 if inference_df is not None:
