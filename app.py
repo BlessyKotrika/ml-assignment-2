@@ -129,13 +129,27 @@ def compute_metrics(y_true, y_pred, y_score=None):
 # -------- Sidebar controls --------
 with st.sidebar:
     st.header("Controls")
+
+    # Ensure default test size is consistent
     test_size = st.slider("Test size", 0.1, 0.4, 0.2, 0.05)
-    selection = st.selectbox("Select a model (or All Models)",
-                             ["All Models (comparison)"] + list(models.keys()))
+
+    # Default dropdown to 'All Models (comparison)' on a fresh session
+    if "model_selection" not in st.session_state:
+        st.session_state["model_selection"] = "All Models (comparison)"
+
+    selection = st.selectbox(
+        "Select a model (or All Models)",
+        options=["All Models (comparison)"] + list(models.keys()),
+        index=0,  # default index
+        key="model_selection"
+    )
+
     st.markdown("---")
-    st.caption("Optional: Upload a CSV.\n\n"
-               "- **With `y`** → evaluates metrics on your file\n"
-               "- **Without `y`** → inference only on uploaded rows")
+    st.caption(
+        "Optional: Upload a CSV.\n\n"
+        "- **With `y`** → evaluates metrics on your file\n"
+        "- **Without `y`** → inference only on uploaded rows"
+    )
     up = st.file_uploader("Upload CSV", type=["csv"])
 
 # -------- Base split --------
@@ -209,8 +223,18 @@ def fit_and_score(models_dict, X_tr, y_tr, X_te, y_te):
         results[name], cms[name], reports[name] = met, cm, cr
     return results, cms, reports
 
-all_results, all_cms, all_reports = fit_and_score(models, X_train, y_train, eval_X, eval_y)
+# -------- Fit & evaluate all models on eval_X/eval_y --------
+try:
+    with st.spinner("Training and evaluating models..."):
+        all_results, all_cms, all_reports = fit_and_score(models, X_train, y_train, eval_X, eval_y)
+except Exception as ex:
+    st.error("❌ An error occurred while training/evaluating models.")
+    st.exception(ex)
+    st.stop()
 
+# Safety: if something returned empty, show a helpful message
+if not all_results:
+    st.warning("No results produced. Please try rerunning the app (↻) or check the dataset and logs.")
 def as_table(res_dict: dict) -> pd.DataFrame:
     df = pd.DataFrame(res_dict).T[["Accuracy", "AUC", "Precision", "Recall", "F1", "MCC"]]
     return df.sort_values(by="F1", ascending=False)
