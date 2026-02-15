@@ -25,7 +25,6 @@ We report **Accuracy, AUC, Precision, Recall, F1, MCC** for each model.
 (MCC is computed using `sklearn.metrics.matthews_corrcoef`.) [4](https://cseweb.ucsd.edu/classes/sp15/cse190-c/reports/sp15/024.pdf)
 
 ### Comparison Table (Test Set)
-> Fill this table using the app or `python train.py` (generates `model_comparison.csv`).
 
 | ML Model Name       | Accuracy | AUC   | Precision | Recall | F1    | MCC   |
 |---------------------|---------:|------:|----------:|------:|------:|------:|
