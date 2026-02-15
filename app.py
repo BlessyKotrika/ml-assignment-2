@@ -1,9 +1,10 @@
 # app.py
 
 import io
+import sys
+import importlib.util
 from pathlib import Path
 from typing import Tuple, List, Optional
-import importlib.util
 
 import numpy as np
 import pandas as pd
@@ -79,10 +80,25 @@ def split_features(df: pd.DataFrame, target_col: str) -> Tuple[pd.DataFrame, pd.
     return X, y, num_cols, cat_cols
 
 
+def _make_ohe() -> OneHotEncoder:
+    """
+    Build a OneHotEncoder that plays well with sklearn 1.8+ (Python 3.13)
+    and older sklearn versions.
+
+    - In sklearn >=1.8, `sparse` is gone; use `sparse_output=False`.
+    - In older versions, `sparse_output` may not exist; fall back to `sparse=False`.
+    """
+    try:
+        # Newer sklearn (1.3+), and required for 1.8+
+        return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    except TypeError:
+        # Older sklearn
+        return OneHotEncoder(handle_unknown="ignore", sparse=False)
+
+
 def make_preprocessor(num_cols: List[str], cat_cols: List[str]) -> ColumnTransformer:
     """Builds a ColumnTransformer with scaling for numeric and OHE for categorical."""
-    # use sparse=False for broader scikit-learn compatibility
-    ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    ohe = _make_ohe()
     scaler = StandardScaler(with_mean=True, with_std=True)
 
     preprocessor = ColumnTransformer(
@@ -257,14 +273,14 @@ def profiling_available() -> bool:
 
 
 # -----------------------------
-# Sidebar Controls (incl. quick_mode)
+# Sidebar Controls
 # -----------------------------
 st.sidebar.header("⚙️ Configuration")
 
 data_source = st.sidebar.radio("Dataset Source", ["Use default path", "Upload CSV"])
 sep_choice = st.sidebar.text_input("CSV separator", value=";")
 
-# Define quick_mode to avoid NameError and to drive behavior throughout.
+# Quick mode (sampling)
 quick_mode = st.sidebar.checkbox("Quick Mode (faster & lighter)", value=True)
 
 nrows_opt = st.sidebar.number_input(
@@ -282,7 +298,9 @@ if data_source == "Upload CSV":
     uploaded_file = st.sidebar.file_uploader("Upload bank-additional-full.csv", type=["csv"])
 
 st.sidebar.markdown("---")
-enable_profile = st.sidebar.checkbox("Generate Profiling Report (if available)", value=False)
+# OFF by default due to Python 3.13 ecosystem variance
+enable_profile = st.sidebar.checkbox("Generate Profiling Report (if available)", value=False,
+                                     help="Turn on if ydata-profiling is installed and works in your env.")
 test_size = st.sidebar.slider("Test size", min_value=0.1, max_value=0.4, value=0.2, step=0.05, format="%.2f")
 cv_folds = st.sidebar.slider("Cross-Validation folds", min_value=3, max_value=10, value=5, step=1)
 st.sidebar.markdown("---")
@@ -301,7 +319,6 @@ compare_models = st.sidebar.multiselect(
     ["Logistic Regression", "Decision Tree", "kNN", "Naive Bayes", "Random Forest", "XGBoost"],
     default=["Logistic Regression", "Decision Tree", "kNN", "Naive Bayes", "Random Forest", "XGBoost"],
 )
-
 auto_run_compare = st.sidebar.checkbox("Run comparison automatically", value=False)
 
 
@@ -511,8 +528,9 @@ with col_cv:
 # Comparison (Multiple Models on the same Test Set)
 # -----------------------------
 st.subheader("4) Comparison Table (Test Set)")
+st.caption("Fill this table using the app or run `python train.py` (generates `model_comparison.csv`).")
 
-# Ensure session storage for comparison results
+# Persist comparison results
 if "cmp_df" not in st.session_state:
     st.session_state["cmp_df"] = None
 
@@ -560,7 +578,6 @@ def run_model_comparison(
     out = pd.DataFrame(rows)
     return out.sort_values(["F1","AUC","MCC"], ascending=[False, False, False]).reset_index(drop=True)
 
-# Controls for comparison
 col_cmp_left, col_cmp_right = st.columns([1,1])
 with col_cmp_left:
     do_run = st.button("🔁 Run Comparison", help="Train selected models and score on the test set.")
@@ -587,8 +604,8 @@ cmp_df = st.session_state.get("cmp_df", None)
 
 if cmp_df is None or cmp_df.empty:
     st.info("No comparison results yet. Click **🔁 Run Comparison** to populate the table.")
-    # Show the README-friendly scaffold so the section is visible even before running
     st.markdown("### Comparison Table (Test Set)")
+    st.markdown("> Fill this table using the app or `python train.py` (generates `model_comparison.csv`).")
     st.markdown(
         "| ML Model Name       | Accuracy | AUC   | Precision | Recall | F1    | MCC   |\n"
         "|---------------------|---------:|------:|----------:|------:|------:|------:|\n"
@@ -600,7 +617,6 @@ if cmp_df is None or cmp_df.empty:
         "| XGBoost             |          |       |           |       |       |       |"
     )
 else:
-    # Display table with formatting
     st.dataframe(
         cmp_df.style.format({
             "Accuracy": "{:.3f}",
@@ -613,7 +629,6 @@ else:
         use_container_width=True
     )
 
-    # Markdown version (README-friendly)
     st.markdown("#### Comparison Table (Test Set)")
     header = "| ML Model Name       | Accuracy | AUC   | Precision | Recall | F1    | MCC   |\n|---------------------|---------:|------:|----------:|------:|------:|------:|"
     lines = [header]
@@ -624,7 +639,6 @@ else:
         )
     st.markdown("\n".join(lines))
 
-    # Download CSV
     st.download_button(
         "⬇️ Download model_comparison.csv",
         data=cmp_df.to_csv(index=False).encode("utf-8"),
@@ -632,7 +646,6 @@ else:
         mime="text/csv"
     )
 
-    # Insights: 3–5 bullets (F1 / AUC / MCC & Bias–Variance)
     st.markdown("#### Insights (F1 / AUC / MCC & Bias–Variance)")
     try:
         top_f1 = cmp_df.loc[cmp_df["F1"].idxmax()]
@@ -649,9 +662,8 @@ else:
             dt_row = cmp_df[cmp_df["ML Model Name"] == "Decision Tree"].iloc[0]
             rf_row = cmp_df[cmp_df["ML Model Name"] == "Random Forest"].iloc[0]
             bullets.append(
-                f"**Variance reduction:** Random Forest improves over a single Decision Tree "
-                f"(ΔF1 = {rf_row['F1']-dt_row['F1']:+.3f}, ΔAUC = {rf_row['AUC']-dt_row['AUC']:+.3f}, ΔMCC = {rf_row['MCC']-dt_row['MCC']:+.3f}), "
-                "consistent with bagging reducing variance."
+                f"**Variance reduction:** Random Forest improves over Decision Tree "
+                f"(ΔF1 = {rf_row['F1']-dt_row['F1']:+.3f}, ΔAUC = {rf_row['AUC']-dt_row['AUC']:+.3f}, ΔMCC = {rf_row['MCC']-dt_row['MCC']:+.3f})."
             )
         if {"Logistic Regression", "XGBoost"}.issubset(names):
             lr_row = cmp_df[cmp_df["ML Model Name"] == "Logistic Regression"].iloc[0]
@@ -727,7 +739,6 @@ if do_predict:
 if st.button("💾 Save current model in session"):
     try:
         if single_pipe is None:
-            # If single_pipe wasn't built (e.g., XGBoost not installed), fall back
             single_pipe = build_any_model(
                 model_name=model_choice,
                 preprocessor=preprocessor,
@@ -753,5 +764,6 @@ st.caption(
     "- The dataset uses a semicolon (;) separator.\n"
     "- Use **Quick Mode** to sample rows for faster exploration.\n"
     "- For profiling, install `ydata-profiling` (modern replacement for pandas_profiling).\n"
-    "- Target column `y` is mapped to 1 (yes) / 0 (no)."
+    "- Target column `y` is mapped to 1 (yes) / 0 (no).\n"
+    f"- Running on Python: {sys.version.split()[0]}"
 )
