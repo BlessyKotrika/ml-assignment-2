@@ -27,15 +27,30 @@ We report **Accuracy, AUC, Precision, Recall, F1, MCC** for each model.
 ### Comparison Table (Test Set)
 
 | ML Model Name       | Accuracy | AUC   | Precision | Recall | F1    | MCC   |
-|---------------------|---------:|------:|----------:|------:|------:|------:|
-| Logistic Regression |          |       |           |       |       |       |
-| Decision Tree       |          |       |           |       |       |       |
-| kNN                 |          |       |           |       |       |       |
-| Naive Bayes         |          |       |           |       |       |       |
-| Random Forest       |          |       |           |       |       |       |
-| XGBoost             |          |       |           |       |       |       |
+| ------------------- | -------- | ----- | --------- | ------ | ----- | ----- |
+| Logistic Regression | 0.854    | 0.911 | 0.422     | 0.821  | 0.558 | 0.519 |
+| XGBoost             | 0.902    | 0.924 | 0.566     | 0.536  | 0.550 | 0.496 |
+| Decision Tree       | 0.868    | 0.696 | 0.421     | 0.473  | 0.445 | 0.372 |
+| Naive Bayes         | 0.781    | 0.799 | 0.293     | 0.679  | 0.410 | 0.340 |
+| Random Forest       | 0.902    | 0.921 | 0.640     | 0.286  | 0.395 | 0.384 |
+| kNN                 | 0.888    | 0.876 | 0.500     | 0.304  | 0.378 | 0.332 |
+
 
 ### Observations about Model Performance
-- (Add 3–5 bullet points comparing F1/AUC/MCC across models, note bias–variance, etc.)
 
-## Project Structure
+Best Overall AUC: XGBoost (0.924) slightly outperforms Random Forest and Logistic Regression, indicating strong ranking ability and good class separability.
+
+Best Recall: Logistic Regression (0.821) captures the highest number of actual subscribers, making it suitable when minimizing false negatives is important (e.g., not missing potential customers).
+
+Best Precision: Random Forest (0.640) produces fewer false positives, making it better when marketing cost per contact is high.
+
+Best MCC: Logistic Regression (0.519) performs best in terms of balanced correlation between predicted and true classes, especially important due to class imbalance.
+
+Bias–Variance Insight:
+
+Decision Tree shows lower AUC (0.696), suggesting possible overfitting (high variance).
+
+Naive Bayes has lower accuracy but decent recall, indicating high bias due to strong independence assumptions.
+
+Ensemble models (Random Forest, XGBoost) improve stability and generalization.
+
