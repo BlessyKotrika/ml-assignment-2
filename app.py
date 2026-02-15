@@ -40,7 +40,7 @@ st.set_page_config(
     layout="wide",
 )
 
-DEFAULT_DATA_PATH = "/Users/blessykotrika/Documents/GitHub/ml-assignment-2/data/bank-additional-full.csv"
+DEFAULT_DATA_PATH = "data/bank-additional-full.csv"
 TARGET_COL = "y"
 RANDOM_STATE = 42
 
